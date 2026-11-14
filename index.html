@@ -2803,7 +2803,7 @@ gl('kühlschrank','fridge','kuehlschrank');
 
 /* ================= FESTE: festival calendar + Sankt Martin ================= */
 const FESTS=[
-  {id:'martin',de:'Sankt Martin',icon:'🏮',m:11,d:11,from:[10,15],to:[11,30],ready:true,en:'Lantern walk, Martinsfeuer and Weckmänner. Children make lanterns and sing as they walk behind St. Martin on his horse.'},
+  {id:'martin',de:'Sankt Martin',icon:'🏮',m:11,d:11,from:[10,15],to:[11,13],ready:true,en:'Lantern walk, Martinsfeuer and Weckmänner. Children make lanterns and sing as they walk behind St. Martin on his horse.'},
   {id:'nikolaus',de:'Nikolaustag',icon:'👢',m:12,d:6,from:[12,1],to:[12,6],en:'Children put their boots outside the door. In the morning Nikolaus has filled them with nuts, oranges and chocolate.'},
   {id:'advent',de:'Advent & Weihnachtsmarkt',icon:'🎄',m:12,d:1,from:[11,27],to:[12,24],en:'Christmas markets, Lebkuchen hearts and an Adventskalender with a little door to open every day.'},
   {id:'silvester',de:'Silvester',icon:'🎆',m:12,d:31,from:[12,29],to:[1,1],en:'New Year\'s Eve: fireworks, Bleigießen and „Guten Rutsch!“'},
@@ -2906,6 +2906,10 @@ function festTarget(){
   return null;
 }
 async function festShopIntro(id){
+  const late=id==='baeckerei'&&festActive('martin')&&!S.festOverride&&!inWindow(FEST_BY.martin);
+  if(late&&!S.flags.weckLeftover){ S.flags.weckLeftover=true; S.flags.weckIntro=true; learn('weckmann',0);
+    await say('Frau Becker','Sankt Martin ist vorbei, aber wir haben noch Weckmänner übrig!','St. Martin is over, but we still have some Weckmänner left over!');
+    await tip('Lucky! Frau Becker kept the leftover Weckmänner from the festival. <b>übrig</b> = left over.'); return; }
   if(id==='baeckerei'&&festActive('martin')&&!S.flags.weckIntro){ S.flags.weckIntro=true; learn('weckmann',0);
     await say('Frau Becker','Für Sankt Martin backen wir Weckmänner!','For St. Martin we bake Weckmänner!');
     await tip('A <b>Weckmann</b> is a sweet bread man with a little clay pipe. Children eat them on Sankt Martin. In some regions he\'s called <b>Stutenkerl</b> or <b>Martinsmann</b>.'); }
@@ -3145,7 +3149,7 @@ function festOverlay(vw,vh){
  ['licht','light'],['aber','but'],['nur','only'],['liebe','dear'],['nicht','not'],['es','it'],['dunkel','dark'],['beginnt','begins'],['schau','look'],['reitet','rides'],['seinem','his'],['folge','follow'],['ihm','him'],
  ['martinsfeuer','St. Martin\'s bonfire'],['soldat','soldier'],['hatte','had'],['warmen','warm'],['an','on'],['einem','a'],['kalten','cold'],['traf','met'],['armen','poor'],['mann','man'],['teilte','shared'],
  ['seinen','his'],['darum','that\'s why'],['auch','too / also'],['hast','have (you)'],['teile','share'],['nein','no'],['die','the'],['sind','are'],['für','for'],['gemacht','done'],['danke','thank you'],
- ['wunderschöner','wonderful'],['super','great'],['frau','Mrs'],['sankt','Saint'],['martin','Martin'],['krah','caw'],['knopf','Knopf'],['bürgermeisterin','mayor (woman)'],['rathaus','town hall'],['marktplatz','market square'],['hmm','hmm'],['mich','me']
+ ['wunderschöner','wonderful'],['super','great'],['frau','Mrs'],['sankt','Saint'],['martin','Martin'],['krah','caw'],['knopf','Knopf'],['bürgermeisterin','mayor (woman)'],['rathaus','town hall'],['marktplatz','market square'],['hmm','hmm'],['mich','me'],['vorbei','over / finished'],['übrig','left over'],['noch','still']
 ].forEach(([k,e])=>gl(k,e));
 
 $('#jFeste').onclick=()=>{ closeJournal(); runScript(openFestKalender); };
