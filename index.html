@@ -2803,7 +2803,7 @@ gl('kühlschrank','fridge','kuehlschrank');
 
 /* ================= FESTE: festival calendar + Sankt Martin ================= */
 const FESTS=[
-  {id:'martin',de:'Sankt Martin',icon:'🏮',m:11,d:11,from:[10,15],to:[11,13],ready:true,en:'Lantern walk, Martinsfeuer and Weckmänner. Children make lanterns and sing as they walk behind St. Martin on his horse.'},
+  {id:'martin',de:'Sankt Martin',icon:'🏮',m:11,d:11,from:[10,15],to:[11,30],ready:true,en:'Lantern walk, Martinsfeuer and Weckmänner. Children make lanterns and sing as they walk behind St. Martin on his horse.'},
   {id:'nikolaus',de:'Nikolaustag',icon:'👢',m:12,d:6,from:[12,1],to:[12,6],en:'Children put their boots outside the door. In the morning Nikolaus has filled them with nuts, oranges and chocolate.'},
   {id:'advent',de:'Advent & Weihnachtsmarkt',icon:'🎄',m:12,d:1,from:[11,27],to:[12,24],en:'Christmas markets, Lebkuchen hearts and an Adventskalender with a little door to open every day.'},
   {id:'silvester',de:'Silvester',icon:'🎆',m:12,d:31,from:[12,29],to:[1,1],en:'New Year\'s Eve: fireworks, Bleigießen and „Guten Rutsch!“'},
@@ -2819,7 +2819,9 @@ function inWindow(f){
   if(!f.from) return false; const now=new Date(), md=(now.getMonth()+1)*100+now.getDate(), a=f.from[0]*100+f.from[1], b=f.to[0]*100+f.to[1];
   return a<=b?(md>=a&&md<=b):(md>=a||md<=b);
 }
-function festActive(id){ if(!S) return false; if(S.festOverride) return S.festOverride===id; const f=FEST_BY[id]; return !!(f&&f.ready&&inWindow(f)); }
+function festActive(id){ if(!S) return false; if(S.festOverride) return S.festOverride===id;
+  if(id==='martin'&&S.martin&&S.martin.step>=1&&S.martin.step<4) return true;   // a started quest stays open until it is finished
+  const f=FEST_BY[id]; return !!(f&&f.ready&&inWindow(f)); }
 const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 function openFestKalender(){ return new Promise(res=>{
   const close=()=>{ closePanel(); res(); };
