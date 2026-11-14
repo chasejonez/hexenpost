@@ -2819,9 +2819,19 @@ function inWindow(f){
   if(!f.from) return false; const now=new Date(), md=(now.getMonth()+1)*100+now.getDate(), a=f.from[0]*100+f.from[1], b=f.to[0]*100+f.to[1];
   return a<=b?(md>=a&&md<=b):(md>=a||md<=b);
 }
-function festActive(id){ if(!S) return false; if(S.festOverride) return S.festOverride===id;
-  if(id==='martin'&&S.martin&&S.martin.step>=1&&S.martin.step<4) return true;   // a started quest stays open until it is finished
-  const f=FEST_BY[id]; return !!(f&&f.ready&&inWindow(f)); }
+/* RULE for every festival / event quest:
+   - festCanStart(id): new quests and offers are only given inside the festival's dates (or the parent's "play now" setting).
+   - festQuestOpen(id): a quest that was already started stays playable until it is finished, whatever the date.
+   - festActive(id) = canStart OR questOpen: everything a started quest needs (seasonal shop items, NPCs, objectives) keeps working.
+   - festLate(id): active only because of an open quest, so show "after the festival" flavour (leftovers, a reminder).
+   Every new festival registers its quest state in FEST_QUESTS. */
+const FEST_QUESTS={
+  martin:{ open:()=>!!(S.martin&&S.martin.step>=1&&S.martin.step<4) },
+};
+function festCanStart(id){ if(!S) return false; if(S.festOverride) return S.festOverride===id; const f=FEST_BY[id]; return !!(f&&f.ready&&inWindow(f)); }
+function festQuestOpen(id){ const q=FEST_QUESTS[id]; return !!(S&&q&&q.open()); }
+function festActive(id){ return festCanStart(id)||festQuestOpen(id); }
+function festLate(id){ return festQuestOpen(id)&&!festCanStart(id); }
 const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 function openFestKalender(){ return new Promise(res=>{
   const close=()=>{ closePanel(); res(); };
@@ -2829,8 +2839,8 @@ function openFestKalender(){ return new Promise(res=>{
   const now=new Date(), t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   const rows=FESTS.map(f=>({f,d:nextFestDate(f)})).sort((a,b)=>(a.d||9e15)-(b.d||9e15));
   rows.forEach(({f,d})=>{
-    const days=d?Math.round((d-t0)/864e5):null, act=festActive(f.id), done=S.fests&&S.fests[f.id];
-    const chip=done?'<span class="fchip done">✓ Gefeiert!</span>':act?'<span class="fchip now">Jetzt!</span>':f.ready?'<span class="fchip soon">Bald</span>':'<span class="fchip later">Coming to the game</span>';
+    const days=d?Math.round((d-t0)/864e5):null, act=festCanStart(f.id), done=S.fests&&S.fests[f.id];
+    const chip=done?'<span class="fchip done">✓ Gefeiert!</span>':festLate(f.id)?'<span class="fchip now">Finish your quest!</span>':act?'<span class="fchip now">Jetzt!</span>':f.ready?'<span class="fchip soon">Bald</span>':'<span class="fchip later">Coming to the game</span>';
     const when=d?`${d.getDate()}. ${MONTHS[d.getMonth()]}${days===0?' · heute!':days===1?' · morgen':` · in ${days} Tagen`}`:'';
     pBody.appendChild(el('div','frow'+(act?' act':''),`<div class="ficon">${f.icon}</div><div class="fmain"><div class="fname">${esc(f.de)} ${chip}</div><div class="fwhen">${esc(when)}</div><div class="fen">${esc(f.en)}</div></div>`));
   });
@@ -2878,9 +2888,11 @@ async function visitEis(){
 function M(){ if(!S.martin) S.martin={step:0}; return S.martin; }
 function martinTasks(){ const m=M(); return {lantern:!!m.lantern, weck:(S.inv.weckmann||0)>=3, song:!!m.song}; }
 function festTick(){
-  if(!started||busy||!festActive('martin')) return;
+  if(!started||busy) return;
+  for(const id in FEST_QUESTS){ if(festLate(id)&&!S.flags['late_'+id]){ S.flags['late_'+id]=true;
+    toast(`${FEST_BY[id].icon} <b>${esc(FEST_BY[id].de)}</b> is over, but you can still finish your quest!`,5000); } }
   const m=M();
-  if(m.step===0&&S.flags.intro&&S.job>=2){
+  if(m.step===0&&festCanStart('martin')&&S.flags.intro&&S.job>=2){
     m.step=1;
     S.msgs.push({from:'wagner',text:'Hallo! Hier ist Frau Wagner, die Bürgermeisterin. Am 11. November feiern wir Sankt Martin! Komm bitte zum Rathaus auf dem Marktplatz.',
       en:'Hello! This is Mrs Wagner, the mayor. On 11 November we celebrate St. Martin! Please come to the town hall on the market square.',read:false});
@@ -2906,7 +2918,7 @@ function festTarget(){
   return null;
 }
 async function festShopIntro(id){
-  const late=id==='baeckerei'&&festActive('martin')&&!S.festOverride&&!inWindow(FEST_BY.martin);
+  const late=id==='baeckerei'&&festLate('martin');
   if(late&&!S.flags.weckLeftover){ S.flags.weckLeftover=true; S.flags.weckIntro=true; learn('weckmann',0);
     await say('Frau Becker','Sankt Martin ist vorbei, aber wir haben noch Weckmänner übrig!','St. Martin is over, but we still have some Weckmänner left over!');
     await tip('Lucky! Frau Becker kept the leftover Weckmänner from the festival. <b>übrig</b> = left over.'); return; }
